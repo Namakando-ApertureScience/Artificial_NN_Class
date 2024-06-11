@@ -2,6 +2,7 @@
 A class for **constructing** and **optimizing** neural networks. 
 
 This class requires numpy.
-´´´phthon
+
+´´´python
 import numpy
 ´´´
