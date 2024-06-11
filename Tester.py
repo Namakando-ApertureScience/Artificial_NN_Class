@@ -3,17 +3,31 @@ import random as rd
 
 
 # Standard error measure
-def error_measure(Data_set_, file_bool=False):
+def error_measure(Data_set_, file_bool=False, show_expected_output=False):
     print()
-
-    for exa in Data_set_:
-        if file_bool:
-            file.write("\n"+str(network_1.computation(exa[0]).round(2)))
-        else:
-            print(network_1.computation(exa[0]).round(2))
 
     if file_bool:
         file.write("\n")
+
+    if show_expected_output:
+        if file_bool:
+            file.write("Approximation " + "Expected output" + "\n")
+
+            for exa in Data_set_:
+                file.write(str(network_1.computation(exa[0]).round(2))+' '+str([round(exa[1][0], 2), round(exa[1][1], 2)])+"\n")
+
+        else:
+            print("Approximation", "Expected output")
+
+            for exa in Data_set_:
+                print(network_1.computation(exa[0]).round(2), [round(exa[1][0], 2), round(exa[1][1], 2)])
+
+    else:
+        for exa in Data_set_:
+            if file_bool:
+                file.write(str(network_1.computation(exa[0]).round(2))+"\n")
+            else:
+                print(network_1.computation(exa[0]).round(2))
 
     print()
 
@@ -33,24 +47,24 @@ def error_measure(Data_set_, file_bool=False):
 # Do you want a file
 file_bool_ = False
 if file_bool_:
-    file = open("text.txt", 'a')
+    file = open("Training_data.txt", 'a')
 
 # Relevant parameters
 optimizer = "Resilient_Backpropagation"
 approximation_range = [-1, 4]
 input_output_neuron_number = [4, 2]
-depth_width = [8, 5]
-weight_bound = [-1, 1]
+depth_width = [5, 7]
+weight_bound = [-5, 5]
 input_output_steepness = [1, 1]
 learning_rate = 0.001
 
 # Repeat exposures for training
-exposures = 50_000
+exposures = 5_000
 
 # Data generator
 input_range = [-1, 1]
 output_range = [0, 3]
-Number_of_datapoints = 30
+Number_of_datapoints = 10
 Data_set = []
 
 for i in range(Number_of_datapoints):
@@ -85,12 +99,12 @@ old_error = error_measure(Data_set, file_bool_)
 
 for i in range(exposures):
     print("repetitions: " + str(i + 1), end='\r')
-    for j in range(Data_size):
+    for j in range(Number_of_datapoints):
         Data = rd.choice(Data_set)
         network_1.Updater(optimizer, Data[0], Data[1])
 print()
 
-new_error = error_measure(Data_set, file_bool_)
+new_error = error_measure(Data_set, file_bool_, True)
 
 error_improvement_percentage = 100 * (1 - new_error / old_error)
 
