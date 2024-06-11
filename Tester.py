@@ -85,7 +85,7 @@ old_error = error_measure(Data_set, file_bool_)
 
 for i in range(exposures):
     print("repetitions: " + str(i + 1), end='\r')
-    for j in range(Data_size):
+    for j in range(Number_of_datapoints):
         Data = rd.choice(Data_set)
         network_1.Updater(optimizer, Data[0], Data[1])
 print()
