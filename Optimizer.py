@@ -5,37 +5,44 @@ import sys
 
 class Network_optimizer(Network_constructor):
 
-    def __init__(self, approximation_bound, input_output_neuron_number, depth_width, weight_bound,
-                 input_output_steepness, learning_rate, rho1=0.9, rho2=0.999):
+    def __init__(self, approximation_range, input_output_neuron_number, depth_width, weight_bound,
+                 input_output_steepness, learning_rate_adam, rho1=0.9, rho2=0.999):
 
-        # Network initialisation
-        super().__init__(approximation_bound, input_output_neuron_number, depth_width, weight_bound,
+        super().__init__(approximation_range, input_output_neuron_number, depth_width, weight_bound,
                          input_output_steepness)
 
         # Recursion limit
         sys.setrecursionlimit(((depth_width[0] * depth_width[1]) + 100) ** 2)
 
-        # Important matrices
+        # Error vector
+        self.error_vector = np.array([])
+
+        # Important matrices for resilient propagation
         self.identity = np.full((depth_width[1], depth_width[1] + 1), 1.0)
         self.learning_rate_matrix = np.full((depth_width[0], depth_width[1], depth_width[1] + 1), 0.1)
 
+        ################################################################################################################
         # Important constants
-        self.learning_rate = learning_rate
 
-        self.alpha_up = 0
-        self.alpha_down = 0
+        # For Adam
+        self.learning_rate_adam = learning_rate_adam
+
+        # For resilient propagation
+        self.learning_rate_up = 0
+        self.learning_rate_down = 0
 
         self.rho1 = rho1
         self.rho2 = rho2
 
+        # For Adam
         self.epsilon = 1e-10
+
+        ################################################################################################################
+        # For Adam
 
         # Time step
         self.time_step = 1
         self.time_step_bool = True
-
-        # Error vector
-        self.error_vector = np.array([])
 
         # Moments
         self.A = np.zeros((self.depth_width[0], self.depth_width[1], self.depth_width[1] + 1))
@@ -45,27 +52,27 @@ class Network_optimizer(Network_constructor):
     ####################################################################################################################
     # Gradient computation
 
-    def Gradient(self, optimizer,alpha, layer_number):
+    def Gradient(self, optimizer, learning_rate_BP, layer_number=0):
 
         if layer_number == self.depth_width[0] - 1:
-            delta_vector = (self.approximation_bound[1] - self.approximation_bound[0]) * derivative_sigmoid(
+            delta_vector = (self.approximation_range[1] - self.approximation_range[0]) * derivative_sigmoid(
                 self.weighted_sums_matrix[layer_number],
                 self.steepness_values[layer_number]) * self.error_vector
 
-            (self.Backpropagation_prop_update(alpha, layer_number, delta_vector) if optimizer == "Backpropagation"
+            (self.Backpropagation_prop_update(learning_rate_BP, layer_number, delta_vector) if optimizer == "Backpropagation"
              else (self.Resilient_prop_update(layer_number, delta_vector) if optimizer == "Resilient_Backpropagation"
                    else (self.Adam_update(layer_number, delta_vector) if optimizer == "Adam"
                          else print("Error !!!"))))
 
             return delta_vector
 
-        delta_vector = (self.approximation_bound[1] - self.approximation_bound[0]) * derivative_sigmoid(
+        delta_vector = (self.approximation_range[1] - self.approximation_range[0]) * derivative_sigmoid(
             self.weighted_sums_matrix[layer_number],
             self.steepness_values[layer_number]) * np.matmul(
             np.delete(self.neural_network[layer_number + 1].transpose(),
-                      self.depth_width[1], axis=0), self.Gradient(optimizer, alpha, layer_number + 1))
+                      self.depth_width[1], axis=0), self.Gradient(optimizer, learning_rate_BP, layer_number + 1))
 
-        (self.Backpropagation_prop_update(alpha, layer_number, delta_vector) if optimizer == "Backpropagation"
+        (self.Backpropagation_prop_update(learning_rate_BP, layer_number, delta_vector) if optimizer == "Backpropagation"
          else (self.Resilient_prop_update(layer_number, delta_vector) if optimizer == "Resilient_Backpropagation"
                else (self.Adam_update(layer_number, delta_vector) if optimizer == "Adam"
                      else print("Error !!!"))))
@@ -76,15 +83,15 @@ class Network_optimizer(Network_constructor):
     ####################################################################################################################
     # Update
 
-    def Updater(self, optimizer, input_vector, desired_output_vector, learning_rate_BP=0.1, alpha_up=1.05, alpha_down=0.5):
+    def Updater(self, optimizer, input_vector, desired_output_vector, learning_rate_BP=0.1, learning_rate_up=1.05, learning_rate_down=0.5):
 
         self.error_vector = np.append((desired_output_vector - self.computation(input_vector)),
                                       np.zeros(len(self.output_deletion_vector)))
 
-        self.alpha_up = alpha_up
-        self.alpha_down = alpha_down
+        self.learning_rate_up = learning_rate_up
+        self.learning_rate_down = learning_rate_down
 
-        self.Gradient(optimizer, learning_rate_BP, 0)
+        self.Gradient(optimizer, learning_rate_BP)
 
         if optimizer == "Adam" and self.time_step_bool:
             self.time_step += 1
@@ -110,9 +117,9 @@ class Network_optimizer(Network_constructor):
 
         self.learning_rate_matrix[layer_number] = self.learning_rate_matrix[layer_number] * ((np.sign(gradient *
                                                                     self.gradients[layer_number]) *
-                                                                (self.alpha_up - self.alpha_down) +
+                                                                (self.learning_rate_up - self.learning_rate_down) +
                                                                 abs(np.sign(gradient * self.gradients[layer_number])) *
-                                                                (self.alpha_up + self.alpha_down)) / 2 + \
+                                                                (self.learning_rate_up + self.learning_rate_down)) / 2 + \
                                                                abs(self.identity - abs(
                                                                    np.sign(gradient * self.gradients[layer_number]))))
 
@@ -140,5 +147,5 @@ class Network_optimizer(Network_constructor):
         self.A[layer_number] = self.rho2 * self.A[layer_number] + (1 - self.rho2) * grad ** 2
         self.F[layer_number] = self.rho1 * self.F[layer_number] + (1 - self.rho1) * grad
 
-        self.neural_network[layer_number] = (self.neural_network[layer_number] + (self.learning_rate * bias_correction) *
+        self.neural_network[layer_number] = (self.neural_network[layer_number] + (self.learning_rate_adam * bias_correction) *
                                              (self.F[layer_number] / ((self.A[layer_number] + self.epsilon) ** 0.5)))

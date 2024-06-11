@@ -31,29 +31,29 @@ def error_measure(Data_set_, file_bool=False):
 
 
 # Do you want a file
-file_bool_ = True
+file_bool_ = False
 if file_bool_:
     file = open("text.txt", 'a')
 
 # Relevant parameters
-optimizer = "Adam"
-approximation_bound = [-1, 4]
+optimizer = "Resilient_Backpropagation"
+approximation_range = [-1, 4]
 input_output_neuron_number = [4, 2]
-depth_width = [4, 5]
+depth_width = [8, 5]
 weight_bound = [-1, 1]
 input_output_steepness = [1, 1]
 learning_rate = 0.001
 
 # Repeat exposures for training
-repeat_exposure = 5000
+exposures = 50_000
 
 # Data generator
 input_range = [-1, 1]
 output_range = [0, 3]
-Data_size = 10
+Number_of_datapoints = 30
 Data_set = []
 
-for i in range(Data_size):
+for i in range(Number_of_datapoints):
 
     input_vector = []
     for j in range(input_output_neuron_number[0]):
@@ -68,7 +68,7 @@ for i in range(Data_size):
     Data_set.append([input_vector, output_vector])
 
 # Neural network
-network_1 = NN(approximation_bound,
+network_1 = NN(approximation_range,
                input_output_neuron_number,
                depth_width,
                weight_bound,
@@ -83,8 +83,8 @@ else:
 
 old_error = error_measure(Data_set, file_bool_)
 
-for i in range(repeat_exposure):
-    print("repeats: " + str(i + 1), end='\r')
+for i in range(exposures):
+    print("repetitions: " + str(i + 1), end='\r')
     for j in range(Data_size):
         Data = rd.choice(Data_set)
         network_1.Updater(optimizer, Data[0], Data[1])

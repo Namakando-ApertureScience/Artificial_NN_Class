@@ -13,12 +13,12 @@ def sigmoid(x, a):
 
 class Network_constructor:
 
-    def __init__(self, approximation_bound, input_output_neuron_number, depth_width, weight_bound,
+    def __init__(self, approximation_range, input_output_neuron_number, depth_width, weight_bound,
                  input_output_steepness):
 
         # Network dimensions and approximation interval
         self.depth_width = depth_width
-        self.approximation_bound = approximation_bound
+        self.approximation_range = approximation_range
 
         # Network input and output size correction
         self.input_length_diff = depth_width[1] - input_output_neuron_number[0]
@@ -113,8 +113,8 @@ class Network_constructor:
         ############################################################################
         # Converting standardised network output to approximation interval
 
-        return np.delete((self.approximation_bound[1] - self.approximation_bound[0]) * \
-                         network_output + self.approximation_bound[0],
+        return np.delete((self.approximation_range[1] - self.approximation_range[0]) * \
+                         network_output + self.approximation_range[0],
                          self.output_deletion_vector, axis=0)
 
     ####################################################################################################################
