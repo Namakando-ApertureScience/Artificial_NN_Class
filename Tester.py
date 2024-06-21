@@ -1,4 +1,4 @@
-from Optimizer import Network_optimizer as NN
+from Optimizer import *
 import random as rd
 
 
@@ -14,13 +14,13 @@ def error_measure(Data_set_, file_bool=False, show_expected_output=False):
             file.write("Approximation " + "Expected output" + "\n")
 
             for exa in Data_set_:
-                file.write(str(network_1.computation(exa[0]).round(2))+' '+str([round(exa[1][0], 2), round(exa[1][1], 2)])+"\n")
+                file.write(str(network_1.computation(exa[0]).round(2))+' '+str(np.array(exa[1]).round(2))+"\n")
 
         else:
             print("Approximation", "Expected output")
 
             for exa in Data_set_:
-                print(network_1.computation(exa[0]).round(2), [round(exa[1][0], 2), round(exa[1][1], 2)])
+                print(network_1.computation(exa[0]).round(2), np.array(exa[1]).round(2))
 
     else:
         for exa in Data_set_:
@@ -82,12 +82,12 @@ for i in range(Number_of_datapoints):
     Data_set.append([input_vector, output_vector])
 
 # Neural network
-network_1 = NN(approximation_range,
-               input_output_neuron_number,
-               depth_width,
-               weight_bound,
-               input_output_steepness,
-               learning_rate)
+network_1 = Network_optimizer(approximation_range,
+                              input_output_neuron_number,
+                              depth_width,
+                              weight_bound,
+                              input_output_steepness,
+                              learning_rate)
 
 # Test
 if file_bool_:
